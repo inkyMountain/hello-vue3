@@ -1,77 +1,85 @@
 <template>
+  <div class="tabs">
+    <template v-for="tab in tabs" :key="tab.id">
+      <div class="tab">
+        {{ tab.name }}
+      </div>
+    </template>
+  </div>
+
   <div class="goods-list">
-    <div class="goods" v-for="goods in goodsList" :key="goods.id">
-      {{ goods.name }}
+    <button @click="push()">push</button>
+
+    <template v-for="goods in goodsList" :key="goods.id">
+      <div class="goods">
+        {{ goods.name }}
+      </div>
+    </template>
+
+    <div class="goods-amount">
+      {{ goodsAmount }}
     </div>
   </div>
 
   <Injected />
 </template>
 
-<script>
-import { onMounted, provide, reactive, watch } from 'vue'
-import Injected from './Injected'
+<script lang="ts">
+import { computed, onMounted, reactive, watch, provide, inject } from "vue";
+import useGoodsList from "../hooks/useGoodsList";
+import useTabs from "../hooks/useTabs";
+import Injected from './Injected.vue'
 
 export default {
-  name: 'HelloWorld',
+  name: "HelloWorld",
 
   components: {
     Injected,
   },
 
   setup(props) {
-    provide(
-      'testProvide',
-      reactive({
-        value: 'value from provide',
-      })
-    )
-    
-    const fetchGoodsList = () => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const goodsList = [...new Array(10)].map((_, index) => {
-            return {
-              id: index,
-              name: `Goods${index}`,
-            }
-          })
-          resolve(goodsList)
-        }, 1000)
-      })
-    }
+    const { goodsList, goodsAmount, fetchGoodsList, push } = useGoodsList();
+    const { tabs, fetchTabs } = useTabs();
 
-    const goodsList = reactive([])
-
-    watch(
-      goodsList,
-      (list, oldList) => {
-        console.log('list', list)
-        console.log('oldList', oldList)
-      },
-      {
-        immediate: true,
-      }
-    )
-
-    onMounted(async () => {
-      goodsList.push(...(await fetchGoodsList()))
-    })
+    onMounted(() => {
+      fetchTabs()
+        .then((fetchedTabs) => {
+          tabs.push(...fetchedTabs);
+          return fetchedTabs;
+        })
+        .then((fetchedTabs) => {
+          const firstTab = fetchedTabs[0];
+          return firstTab ? fetchGoodsList(firstTab.id.toString()) : [];
+        })
+        .then((fetchedGoodsList) => {
+          goodsList.push(...fetchedGoodsList);
+        });
+    });
 
     return {
       goodsList,
+      goodsAmount,
       fetchGoodsList,
-    }
+      push,
+      tabs,
+      fetchTabs,
+    };
   },
 
   props: {
     msg: String,
   },
-}
+};
 </script>
 
 <style lang="less" scoped>
-.count {
-  background-color: lightblue;
+.tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .tab:not(:last-child) {
+    margin-right: 10px;
+  }
 }
 </style>
