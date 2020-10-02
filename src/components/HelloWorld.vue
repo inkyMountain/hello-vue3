@@ -4,15 +4,29 @@
       {{ goods.name }}
     </div>
   </div>
+
+  <Injected />
 </template>
 
 <script>
-import { onMounted, reactive, watch } from 'vue'
+import { onMounted, provide, reactive, watch } from 'vue'
+import Injected from './Injected'
 
 export default {
   name: 'HelloWorld',
 
+  components: {
+    Injected,
+  },
+
   setup(props) {
+    provide(
+      'testProvide',
+      reactive({
+        value: 'value from provide',
+      })
+    )
+    
     const fetchGoodsList = () => {
       return new Promise((resolve) => {
         setTimeout(() => {
